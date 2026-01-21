@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from st_supabase_connection import SupabaseConnection
+from st_supabase_connection import SupabaseConnection, execute_query
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Birdfeeder Financials", layout="wide")
@@ -23,8 +23,12 @@ conn = st.connection("supabase", type=SupabaseConnection)
 
 @st.cache_data(ttl="1h")
 def load_data():
-    # Fetch all data from the daily_kpis table
-    response = conn.query("*", table="daily_kpis").execute()
+    # 1. Build the query using standard Supabase syntax
+    query = conn.table("daily_kpis").select("*")
+    
+    # 2. Use execute_query to run it with caching
+    response = execute_query(query, ttl="1h")
+    
     df = pd.DataFrame(response.data)
     df['date'] = pd.to_datetime(df['date'])
     return df.sort_values('date')
