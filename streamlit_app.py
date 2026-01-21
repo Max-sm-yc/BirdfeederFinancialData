@@ -37,7 +37,7 @@ def load_data():
 try:
     df = load_data()
 
-    st.title("📈 Birdfeeder Financial Dashboard")
+    st.title("Birdfeeder Financial Dashboard")
     st.caption("Data synced daily via GitHub Actions")
 
     # --- SIDEBAR CONTROLS ---
