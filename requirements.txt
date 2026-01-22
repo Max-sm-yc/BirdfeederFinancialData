@@ -3,3 +3,4 @@ pandas
 st-supabase-connection
 supabase
 plotly
+numpy
