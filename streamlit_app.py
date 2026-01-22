@@ -54,33 +54,41 @@ try:
     )
 
     # 2. KPI Selector
-    available_kpis = ['revenue', 'cogs', 'comps', 'processing', 'net_income']
-    selected_kpis = st.sidebar.multiselect(
-        "Select KPIs to Plot",
-        options=available_kpis,
-        default=['revenue', 'net_income']
+    available_metrics = ['revenue', 'cogs', 'comps', 'processing', 'net_income']
+
+    st.sidebar.subheader("Visibility Toggle")
+    # We create a list of all possible lines (Raw and MA)
+    all_possible_lines = []
+    for m in available_metrics:
+        all_possible_lines.append(f"{m.title()}")
+        all_possible_lines.append(f"{m.title()} (Moving Avg)")
+    
+    selected_lines = st.sidebar.multiselect(
+        "Select lines to display",
+        options=all_possible_lines,
+        default=["Revenue", "Revenue (Moving Avg)", "Net_Income"]
     )
 
     # 3. Moving Average Toggle
-    show_ma = st.sidebar.checkbox("Show 7-Day Moving Average")
-    if show_ma:
-        ma_period = st.sidebar.slider(
-            "MA Period (Days)", 
-            min_value=2, 
-            max_value=30, 
-            value=7,  # Default to 7 days
-            step=1
-        )
-    else:
-        ma_period = 7 # Default backup value
+    ma_period = st.sidebar.slider("MA Period (Days)", 2, 30, 7)
+
     # --- DATA PROCESSING ---
     mask = (df['date'] >= pd.Timestamp(date_range[0])) & (df['date'] <= pd.Timestamp(date_range[1]))
     filtered_df = df.loc[mask].copy()
-
-    if show_ma:
-        for kpi in selected_kpis:
-            # Use the ma_period variable from the slider here
-            filtered_df[f"{kpi}_MA"] = filtered_df[kpi].rolling(window=ma_period).mean()
+    
+    # Calculate ALL moving averages behind the scenes
+    for m in available_metrics:
+        filtered_df[f"{m.title()} (Moving Avg)"] = filtered_df[m].rolling(window=ma_period).mean()
+        # Rename raw columns for cleaner legend display
+        filtered_df[m.title()] = filtered_df[m]
+    
+    # --- VISUALIZATION ---
+    if not selected_lines:
+        st.warning("Select at least one line in the sidebar to view the chart.")
+    else:
+        # Plot only what is selected in the multiselect
+        chart_data = filtered_df.set_index('date')[selected_lines]
+        st.line_chart(chart_data)
 
     # --- VISUALIZATION ---
     if not selected_kpis:
