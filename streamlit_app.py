@@ -63,14 +63,24 @@ try:
 
     # 3. Moving Average Toggle
     show_ma = st.sidebar.checkbox("Show 7-Day Moving Average")
-
+    if show_ma:
+        ma_period = st.sidebar.slider(
+            "MA Period (Days)", 
+            min_value=2, 
+            max_value=30, 
+            value=7,  # Default to 7 days
+            step=1
+        )
+    else:
+        ma_period = 7 # Default backup value
     # --- DATA PROCESSING ---
     mask = (df['date'] >= pd.Timestamp(date_range[0])) & (df['date'] <= pd.Timestamp(date_range[1]))
     filtered_df = df.loc[mask].copy()
 
     if show_ma:
         for kpi in selected_kpis:
-            filtered_df[f"{kpi}_MA"] = filtered_df[kpi].rolling(window=7).mean()
+            # Use the ma_period variable from the slider here
+            filtered_df[f"{kpi}_MA"] = filtered_df[kpi].rolling(window=ma_period).mean()
 
     # --- VISUALIZATION ---
     if not selected_kpis:
