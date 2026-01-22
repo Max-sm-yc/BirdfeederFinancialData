@@ -39,8 +39,8 @@ def load_data():
 try:
     df = load_data()
 
-    st.title("📈 Birdfeeder Financial Dashboard")
-    st.caption("Centralized Diagnostic Suite for Business Analysts")
+    st.title("Birdfeeder Financial Dashboard")
+    st.caption("Data & Analytics")
     
     if st.button("🔄 Refresh Data"):
         st.cache_data.clear()
