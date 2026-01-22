@@ -1,112 +1,103 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from st_supabase_connection import SupabaseConnection, execute_query
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Birdfeeder Financials", layout="wide")
+st.set_page_config(page_title="Analyst Insights | Birdfeeder", layout="wide")
 
-# --- CUSTOM CSS FOR DARK NAVY THEME ---
+# --- CUSTOM CSS ---
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #0a192f;
-        color: #e6f1ff;
-    }
-    .stSelectbox label, .stMultiSelect label, .stSlider label {
-        color: #64ffda !important;
-    }
+    .stApp { background-color: #0a192f; color: #e6f1ff; }
+    [data-testid="stMetricValue"] { color: #64ffda; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATABASE CONNECTION ---
 conn = st.connection("supabase", type=SupabaseConnection)
 
 @st.cache_data(ttl="1h")
 def load_data():
-    # 1. Build the query using standard Supabase syntax
     query = conn.table("daily_kpis").select("*")
-    
-    # 2. Use execute_query to run it with caching
     response = execute_query(query, ttl="1h")
-    
     df = pd.DataFrame(response.data)
     df['date'] = pd.to_datetime(df['date'])
+    # Add engineered features for analysts
+    df['day_of_week'] = df['date'].dt.day_name()
+    df['net_margin'] = (df['net_income'] / df['revenue']) * 100
     return df.sort_values('date')
 
-# --- DASHBOARD LOGIC ---
 try:
     df = load_data()
-
-    st.title("Birdfeeder Financial Dashboard")
-    st.caption("Data synced daily via GitHub Actions")
-
-    # --- SIDEBAR CONTROLS ---
-    st.sidebar.header("Chart Settings")
     
-    # 1. Date Range Selector
-    min_date = df['date'].min().to_pydatetime()
-    max_date = df['date'].max().to_pydatetime()
-    date_range = st.sidebar.date_input(
-        "Select Date Range",
-        value=(min_date, max_date),
-        min_value=min_date,
-        max_value=max_date
-    )
-
-    # 2. KPI Selector
-    available_metrics = ['revenue', 'cogs', 'comps', 'processing', 'net_income']
-
-    st.sidebar.subheader("Visibility Toggle")
-    # We create a list of all possible lines (Raw and MA)
-    all_possible_lines = []
-    for m in available_metrics:
-        all_possible_lines.append(f"{m.title()}")
-        all_possible_lines.append(f"{m.title()} (Moving Avg)")
+    # --- FILTERS ---
+    st.title("Birdfeeder Financial Data")
     
-    selected_lines = st.sidebar.multiselect(
-        "Select lines to display",
-        options=all_possible_lines,
-        default=["Revenue", "Revenue (Moving Avg)", "Net_Income"]
-    )
+    with st.sidebar:
+        st.header("Analysis Parameters")
+        date_range = st.date_input("Date Range", value=(df['date'].min(), df['date'].max()))
+        ma_period = st.slider("Smoothing (Days)", 2, 30, 7)
 
-    # 3. Moving Average Toggle
-    ma_period = st.sidebar.slider("MA Period (Days)", 2, 30, 7)
-
-    # --- DATA PROCESSING ---
+    # Filter data based on selection
     mask = (df['date'] >= pd.Timestamp(date_range[0])) & (df['date'] <= pd.Timestamp(date_range[1]))
-    filtered_df = df.loc[mask].copy()
-    
-    # Calculate ALL moving averages behind the scenes
-    for m in available_metrics:
-        filtered_df[f"{m.title()} (Moving Avg)"] = filtered_df[m].rolling(window=ma_period).mean()
-        # Rename raw columns for cleaner legend display
-        filtered_df[m.title()] = filtered_df[m]
-    
-    # --- VISUALIZATION ---
-    if not selected_lines:
-        st.warning("Select at least one line in the sidebar to view the chart.")
-    else:
-        # Plot only what is selected in the multiselect
-        chart_data = filtered_df.set_index('date')[selected_lines]
-        st.line_chart(chart_data)
+    f_df = df.loc[mask].copy()
 
-    # --- VISUALIZATION ---
-    if not selected_kpis:
-        st.warning("Please select at least one KPI from the sidebar.")
-    else:
-        # Prepare plot data
-        plot_cols = selected_kpis + ([f"{kpi}_MA" for kpi in selected_kpis] if show_ma else [])
-        chart_data = filtered_df.set_index('date')[plot_cols]
+    # --- ROW 1: DELTA METRICS ---
+    st.subheader("Performance Momentum")
+    m1, m2, m3, m4 = st.columns(4)
+    
+    def get_delta(col):
+        current = f_df[col].iloc[-1]
+        prev_avg = f_df[col].iloc[-8:-1].mean() # Last 7 days prior to today
+        return current, current - prev_avg
+
+    val, delta = get_delta('revenue')
+    m1.metric("Current Revenue", f"${val:,.2f}", f"${delta:,.2f} vs 7D Avg")
+    
+    val, delta = get_delta('net_income')
+    m2.metric("Current Net Income", f"${val:,.2f}", f"${delta:,.2f} vs 7D Avg")
+    
+    val, delta = get_delta('net_margin')
+    m3.metric("Net Margin %", f"{val:.1f}%", f"{delta:.1f}% vs 7D Avg")
+    
+    m4.metric("COGS Ratio", f"{(f_df['cogs'].sum()/f_df['revenue'].sum()*100):.1f}%")
+
+    # --- ROW 2: RUN RATE & MARGIN TRENDS ---
+    col_left, col_right = st.columns(2)
+    
+    with col_left:
+        st.write("#### Cumulative Run Rate (Revenue)")
+        f_df['cumulative_rev'] = f_df['revenue'].cumsum()
+        st.area_chart(f_df.set_index('date')['cumulative_rev'], color="#64ffda")
+
+    with col_right:
+        st.write("#### Net Margin Stability (%)")
+        f_df['margin_ma'] = f_df['net_margin'].rolling(window=ma_period).mean()
+        st.line_chart(f_df.set_index('date')[['net_margin', 'margin_ma']])
+
+    # --- ROW 3: DAY OF WEEK & HEATMAPS ---
+    st.divider()
+    col_a, col_b = st.columns([1, 2])
+
+    with col_a:
+        st.write("#### Avg Revenue by Day")
+        dow_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        dow_avg = f_df.groupby('day_of_week')['revenue'].mean().reindex(dow_order)
+        st.bar_chart(dow_avg, color="#112240")
+
+    with col_b:
+        st.write("#### Net Income Heatmap (Daily)")
+        # Reshaping for heatmap
+        f_df['week'] = f_df['date'].dt.isocalendar().week
+        heatmap_data = f_df.pivot(index='day_of_week', columns='week', values='net_income')
+        heatmap_data = heatmap_data.reindex(dow_order)
         
-        st.line_chart(chart_data)
-
-    # --- METRICS SUMMARY ---
-    st.subheader("Period Summary")
-    cols = st.columns(len(selected_kpis))
-    for i, kpi in enumerate(selected_kpis):
-        total = filtered_df[kpi].sum()
-        cols[i].metric(label=kpi.replace('_', ' ').title(), value=f"${total:,.2f}")
+        fig = px.imshow(heatmap_data, 
+                        labels=dict(x="Week Number", y="Day", color="Profit"),
+                        color_continuous_scale='Viridis',
+                        aspect="auto")
+        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="#e6f1ff")
+        st.plotly_chart(fig, use_container_width=True)
 
 except Exception as e:
-    st.error(f"Waiting for database records... Error: {e}")
-    st.info("Once your GitHub Action runs for the first time, the data will appear here.")
+    st.error(f"Dashboard Error: {e}")
