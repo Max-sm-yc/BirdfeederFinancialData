@@ -19,22 +19,26 @@ st.markdown("""
 conn = st.connection("supabase", type=SupabaseConnection)
 
 @st.cache_data(ttl="1h")
-def load_data():
-    query = conn.table("daily_kpis").select("*")
-    response = execute_query(query, ttl="1h")
-    df = pd.DataFrame(response.data)
-    df['date'] = pd.to_datetime(df['date'])
+def load_prediction_data():
+    # Use the same secrets as your sync script
+    PRED_URL = "https://n8n.codegraph.cc/webhook/Birdfeeder-predictions-data"
+    headers = {
+        st.secrets["WEBHOOK_KEY"].strip(): st.secrets["WEBHOOK_VALUE"].strip()
+    }
     
-    # 1. Create the string names for days
-    df['day_of_week'] = df['date'].dt.day_name()
-    
-    # 2. DEFINE THE LOGICAL ORDER (The Fix)
-    dow_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    df['day_of_week'] = pd.Categorical(df['day_of_week'], categories=dow_order, ordered=True)
-    
-    # 3. Rest of your analyst engineering
-    df['net_margin'] = (df['net_income'] / df['revenue']) * 100
-    return df.sort_values('date')
+    try:
+        response = requests.get(PRED_URL, headers=headers)
+        response.raise_for_status()
+        raw_data = response.json()["data"]["data"]
+        pred_df = pd.DataFrame(raw_data)
+        
+        # Clean data for better display
+        # Convert "20+" to 20 for numerical sorting, but keep the string for display
+        pred_df['days_numeric'] = pred_df['days_left'].str.replace('+', '').astype(int)
+        return pred_df.sort_values('days_numeric')
+    except Exception as e:
+        st.error(f"Could not load predictions: {e}")
+        return pd.DataFrame()
 
 try:
     df = load_data()
@@ -102,6 +106,44 @@ try:
         st.line_chart(f_df.set_index('date')[selected_lines])
     else:
         st.warning("Please select at least one line in the sidebar.")
+
+    st.divider()
+    st.subheader("📦 Inventory Predictions & Reorder List")
+    st.caption("Items sorted by urgency (Days Left)")
+    
+    pred_df = load_prediction_data()
+    
+    if not pred_df.empty:
+        # 1. Create a styled table
+        def color_urgency(val):
+            try:
+                days = int(str(val).replace('+', ''))
+                if days <= 7: return 'background-color: #721c24; color: white' # Red
+                if days <= 14: return 'background-color: #856404; color: white' # Yellow/Orange
+                return ''
+            except:
+                return ''
+    
+        # Clean up column names for display
+        display_df = pred_df[['item', 'days_left', 'order_amount']].rename(columns={
+            "item": "Item Name",
+            "days_left": "Days of Stock Left",
+            "order_amount": "Suggested Order"
+        })
+    
+        # Display the styled dataframe
+        st.dataframe(
+            display_df.style.applymap(color_urgency, subset=['Days of Stock Left']),
+            use_container_width=True,
+            hide_index=True
+        )
+    
+        # 2. Add a specific "Immediate Action" alert
+        low_stock_items = pred_df[pred_df['days_numeric'] <= 7]['item'].tolist()
+        if low_stock_items:
+            st.warning(f"⚠️ **Order Required:** {', '.join(low_stock_items)} are expected to run out in less than a week.")
+    else:
+        st.info("No prediction data currently available.")
 
     # --- ANALYST ROW: RUN RATE & MARGIN ---
     col1, col2 = st.columns(2)
