@@ -108,10 +108,20 @@ try:
     col_a, col_b = st.columns([1, 2])
     dow_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-    with col_a:
-        st.write("#### Average Revenue by Day")
-        dow_avg = f_df.groupby('day_of_week')['revenue'].mean().reindex(dow_order)
-        st.bar_chart(dow_avg, color="#112240")
+   with col_a:
+    st.write("#### Average Revenue by Day")
+    
+    # 1. Define the correct chronological order
+    dow_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    
+    # 2. Group by day and calculate the mean
+    dow_avg = f_df.groupby('day_of_week')['revenue'].mean()
+    
+    # 3. Reindex to force the Mon-Sun order
+    dow_avg = dow_avg.reindex(dow_order)
+    
+    # 4. Display the chart
+    st.bar_chart(dow_avg, color="#112240")
 
     with col_b:
         st.write("#### Net Income Heatmap")
