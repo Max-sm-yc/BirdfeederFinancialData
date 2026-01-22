@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import requests
 from st_supabase_connection import SupabaseConnection, execute_query
 
 # --- PAGE CONFIG ---
