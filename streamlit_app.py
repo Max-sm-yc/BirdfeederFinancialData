@@ -136,7 +136,7 @@ try:
         st.warning("Please select at least one line in the sidebar.")
 
     st.divider()
-    st.subheader("📦 Inventory Predictions & Reorder List")
+    st.subheader("Inventory & Predictions")
     st.caption("Items sorted by urgency (Days Left)")
     
     pred_df = load_prediction_data()
