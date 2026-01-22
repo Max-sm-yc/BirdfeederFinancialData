@@ -19,6 +19,22 @@ st.markdown("""
 conn = st.connection("supabase", type=SupabaseConnection)
 
 @st.cache_data(ttl="1h")
+def load_data():
+    query = conn.table("daily_kpis").select("*")
+    response = execute_query(query, ttl="1h")
+    df = pd.DataFrame(response.data)
+    df['date'] = pd.to_datetime(df['date'])
+    
+    # 1. Create the string names for days
+    df['day_of_week'] = df['date'].dt.day_name()
+    
+    # 2. DEFINE THE LOGICAL ORDER (The Fix)
+    dow_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    df['day_of_week'] = pd.Categorical(df['day_of_week'], categories=dow_order, ordered=True)
+    
+    # 3. Rest of your analyst engineering
+    df['net_margin'] = (df['net_income'] / df['revenue']) * 100
+    return df.sort_values('date')
 def load_prediction_data():
     # Use the same secrets as your sync script
     PRED_URL = "https://n8n.codegraph.cc/webhook/Birdfeeder-predictions-data"
