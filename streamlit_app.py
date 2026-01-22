@@ -9,7 +9,7 @@ st.set_page_config(page_title="Birdfeeder Analyst Suite", layout="wide")
 # --- THEME STYLING ---
 st.markdown("""
     <style>
-    .stApp { background-color: #0a192f; color: #e6f1ff; }
+    .stApp { background-color: #040A21; color: #e6f1ff; }
     [data-testid="stMetricValue"] { color: #64ffda; }
     .stSelectbox label, .stMultiSelect label, .stSlider label { color: #64ffda !important; }
     </style>
