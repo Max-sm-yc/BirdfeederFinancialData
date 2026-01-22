@@ -37,24 +37,35 @@ def load_data():
     df['net_margin'] = (df['net_income'] / df['revenue']) * 100
     return df.sort_values('date')
 def load_prediction_data():
-    # Use the same secrets as your sync script
     PRED_URL = "https://n8n.codegraph.cc/webhook/Birdfeeder-predictions-data"
-    headers = {
-        st.secrets["WEBHOOK_KEY"].strip(): st.secrets["WEBHOOK_VALUE"].strip()
-    }
+    
+    webhook_key = st.secrets["WEBHOOK_KEY"].strip()
+    webhook_value = st.secrets["WEBHOOK_VALUE"].strip()
+    headers = {webhook_key: webhook_value}
     
     try:
         response = requests.get(PRED_URL, headers=headers)
         response.raise_for_status()
         raw_data = response.json()["data"]["data"]
         pred_df = pd.DataFrame(raw_data)
+
+        # HELPER FUNCTION: Handle "NOW", "20+", and other strings
+        def clean_days(val):
+            val = str(val).upper().strip()
+            if "NOW" in val:
+                return 0  # Highest priority
+            # Remove "+" and any other non-numeric chars, then convert
+            numeric_part = ''.join(filter(str.isdigit, val))
+            return int(numeric_part) if numeric_part else 0
+
+        # Create numeric column for sorting
+        pred_df['days_numeric'] = pred_df['days_left'].apply(clean_days)
         
-        # Clean data for better display
-        # Convert "20+" to 20 for numerical sorting, but keep the string for display
-        pred_df['days_numeric'] = pred_df['days_left'].str.replace('+', '').astype(int)
+        # Sort so "NOW" and low numbers appear at the top
         return pred_df.sort_values('days_numeric')
+        
     except Exception as e:
-        st.error(f"Could not load predictions: {e}")
+        st.error(f"Inventory API Error: {e}")
         return pd.DataFrame()
 
 try:
@@ -133,13 +144,17 @@ try:
     if not pred_df.empty:
         # 1. Create a styled table
         def color_urgency(val):
+            val_str = str(val).upper()
+            if "NOW" in val_str:
+                return 'background-color: #ff4b4b; color: white; font-weight: bold' # Bright Red
+            
             try:
-                days = int(str(val).replace('+', ''))
-                if days <= 7: return 'background-color: #721c24; color: white' # Red
-                if days <= 14: return 'background-color: #856404; color: white' # Yellow/Orange
-                return ''
+                days = int(val_str.replace('+', ''))
+                if days <= 7: return 'background-color: #721c24; color: white'
+                if days <= 14: return 'background-color: #856404; color: white'
             except:
-                return ''
+                pass
+            return ''
     
         # Clean up column names for display
         display_df = pred_df[['item', 'days_left', 'order_amount']].rename(columns={
