@@ -5,7 +5,11 @@ from supabase import create_client
 
 # Load credentials from environment
 URL = "https://n8n.codegraph.cc/webhook/Birdfeeder-financials-square-data"
-HEADERS = {os.getenv("WEBHOOK_KEY"): os.getenv("WEBHOOK_VALUE")}
+# Use .strip() to remove hidden newlines or spaces
+WEBHOOK_KEY = os.getenv("WEBHOOK_KEY").strip()
+WEBHOOK_VALUE = os.getenv("WEBHOOK_VALUE").strip()
+
+HEADERS = {WEBHOOK_KEY: WEBHOOK_VALUE}
 
 # 1. Initialize Supabase
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
