@@ -41,6 +41,10 @@ try:
 
     st.title("📈 Birdfeeder Financial Dashboard")
     st.caption("Centralized Diagnostic Suite for Business Analysts")
+    
+    if st.button("🔄 Refresh Data"):
+        st.cache_data.clear()
+        st.rerun()
 
     # --- SIDEBAR: CONTROLS ---
     with st.sidebar:
