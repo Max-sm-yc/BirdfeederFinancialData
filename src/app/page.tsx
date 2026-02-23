@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [customEnd, setCustomEnd] = useState<string>('');
 
   const [isComparing, setIsComparing] = useState(true);
+  const [comparisonMode, setComparisonMode] = useState<'period' | 'year'>('period');
   const [showFilters, setShowFilters] = useState(false);
 
   async function loadData() {
@@ -75,31 +76,41 @@ export default function Dashboard() {
   let currentData: DailyKPI[] = [];
   let previousData: DailyKPI[] = [];
 
+  // Determine current range
+  let start: Date, end: Date;
   if (rangeType === 'preset') {
-    currentData = kpis.slice(-days);
-    if (isComparing) {
-      previousData = kpis.slice(-(days * 2), -days);
-    }
+    end = kpis.length > 0 ? new Date(kpis[kpis.length - 1].date) : new Date();
+    start = new Date(end);
+    start.setDate(start.getDate() - days + 1);
   } else {
-    // Custom date logic
-    const start = new Date(customStart);
-    const end = new Date(customEnd);
-    currentData = kpis.filter(k => {
-      const d = new Date(k.date);
-      return d >= start && d <= end;
-    });
+    start = new Date(customStart);
+    end = new Date(customEnd);
+  }
 
-    if (isComparing && currentData.length > 0) {
-      // Calculate length of current period in ms
+  currentData = kpis.filter(k => {
+    const d = new Date(k.date);
+    return d >= start && d <= end;
+  });
+
+  if (isComparing && currentData.length > 0) {
+    let prevStart: Date, prevEnd: Date;
+
+    if (comparisonMode === 'period') {
       const duration = end.getTime() - start.getTime();
-      const prevEnd = new Date(start.getTime() - 86400000); // Day before current start
-      const prevStart = new Date(prevEnd.getTime() - duration);
-
-      previousData = kpis.filter(k => {
-        const d = new Date(k.date);
-        return d >= prevStart && d <= prevEnd;
-      });
+      prevEnd = new Date(start.getTime() - 86400000);
+      prevStart = new Date(prevEnd.getTime() - duration);
+    } else {
+      // Previous Year (YoY)
+      prevStart = new Date(start);
+      prevStart.setFullYear(prevStart.getFullYear() - 1);
+      prevEnd = new Date(end);
+      prevEnd.setFullYear(prevEnd.getFullYear() - 1);
     }
+
+    previousData = kpis.filter(k => {
+      const d = new Date(k.date);
+      return d >= prevStart && d <= prevEnd;
+    });
   }
 
   const currentStats = getPeriodStats(currentData);
@@ -118,7 +129,8 @@ export default function Dashboard() {
           </div>
           <p className="text-[#8892b0] flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
-            {rangeType === 'preset' ? `Last ${days} Days` : `${customStart} to ${customEnd}`} Analytics {isComparing && "with Comparisons"}
+            {rangeType === 'preset' ? `Last ${days} Days` : `${customStart} to ${customEnd}`}
+            {isComparing && ` vs ${comparisonMode === 'period' ? 'Previous Period' : 'Previous Year'}`}
           </p>
         </div>
 
@@ -138,13 +150,13 @@ export default function Dashboard() {
               className="flex items-center gap-2 bg-[#64ffda] hover:bg-[#64ffda]/90 text-[#0a192f] px-5 py-2.5 rounded-lg transition-all font-bold shadow-[0_4px_14px_0_rgba(100,255,218,0.39)]"
             >
               <Filter className="w-4 h-4" />
-              Custom Range
+              Analyze
             </button>
 
             {showFilters && (
               <div className="absolute right-0 mt-2 w-80 bg-[#0b112b] border border-[#1e293b] rounded-xl shadow-2xl p-6 z-50">
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-xs uppercase font-bold text-[#64ffda]">Select Period</p>
+                  <p className="text-xs uppercase font-bold text-[#64ffda]">Timeframe</p>
                   <div className="flex bg-[#112240] rounded-md p-1">
                     <button
                       onClick={() => setRangeType('preset')}
@@ -162,14 +174,14 @@ export default function Dashboard() {
                     {[7, 30, 90].map((d) => (
                       <button
                         key={d}
-                        onClick={() => { setDays(d); setRangeType('preset'); setShowFilters(false); }}
+                        onClick={() => { setDays(d); setRangeType('preset'); }}
                         className={`px-3 py-2 rounded-lg text-sm transition-all ${days === d && rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
                       >
                         {d} Days
                       </button>
                     ))}
                     <button
-                      onClick={() => { setDays(kpis.length); setRangeType('preset'); setShowFilters(false); }}
+                      onClick={() => { setDays(kpis.length); setRangeType('preset'); }}
                       className={`px-3 py-2 rounded-lg text-sm transition-all ${days === kpis.length && rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
                     >
                       All Time
@@ -195,25 +207,38 @@ export default function Dashboard() {
                         className="w-full bg-[#112240] border border-[#1e293b] rounded px-3 py-2 text-sm text-[#e6f1ff] focus:outline-none focus:border-[#64ffda]"
                       />
                     </div>
-                    <button
-                      onClick={() => setShowFilters(false)}
-                      className="w-full bg-[#112240] text-[#64ffda] py-2 rounded text-xs font-bold hover:bg-[#1e293b]"
-                    >Apply Custom Range</button>
                   </div>
                 )}
 
-                <div className="pt-3 border-t border-[#1e293b] flex items-center justify-between">
-                  <span className="text-sm font-medium">Compare Previous</span>
-                  <button
-                    onClick={() => setIsComparing(!isComparing)}
-                    className={`w-12 h-6 rounded-full transition-all relative ${isComparing ? 'bg-[#64ffda]' : 'bg-[#1e293b]'}`}
-                  >
-                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isComparing ? 'right-1' : 'left-1'}`} />
-                  </button>
+                <div className="pt-4 mt-2 border-t border-[#1e293b] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Compare Data</span>
+                    <button
+                      onClick={() => setIsComparing(!isComparing)}
+                      className={`w-12 h-6 rounded-full transition-all relative ${isComparing ? 'bg-[#64ffda]' : 'bg-[#1e293b]'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isComparing ? 'right-1' : 'left-1'}`} />
+                    </button>
+                  </div>
+
+                  {isComparing && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setComparisonMode('period')}
+                        className={`text-[10px] uppercase font-bold py-2 rounded border ${comparisonMode === 'period' ? 'border-[#64ffda] text-[#64ffda] bg-[#64ffda]/5' : 'border-[#1e293b] text-[#8892b0]'}`}
+                      >Previous Period</button>
+                      <button
+                        onClick={() => setComparisonMode('year')}
+                        className={`text-[10px] uppercase font-bold py-2 rounded border ${comparisonMode === 'year' ? 'border-[#64ffda] text-[#64ffda] bg-[#64ffda]/5' : 'border-[#1e293b] text-[#8892b0]'}`}
+                      >Previous Year</button>
+                    </div>
+                  )}
                 </div>
-                <p className="text-[10px] text-[#8892b0] mt-2 italic">
-                  Comparisons use equal length trailing periods.
-                </p>
+
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="w-full mt-6 bg-[#64ffda] text-[#0a192f] py-2.5 rounded text-xs font-bold hover:bg-[#64ffda]/90 transition-all shadow-lg"
+                >Apply Analytics</button>
               </div>
             )}
           </div>
