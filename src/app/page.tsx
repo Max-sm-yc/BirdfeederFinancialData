@@ -14,6 +14,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Filter states
+  const [days, setDays] = useState<number>(7);
+  const [isComparing, setIsComparing] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+
   async function loadData() {
     setRefreshing(true);
     const [kpiData, predData] = await Promise.all([
@@ -41,17 +46,35 @@ export default function Dashboard() {
     );
   }
 
-  // Calculate totals for the KPI grid
-  const totalRevenue = kpis.reduce((acc, curr) => acc + curr.revenue, 0);
-  const totalNetIncome = kpis.reduce((acc, curr) => acc + curr.net_income, 0);
-  const avgMargin = kpis.length > 0 ? (totalNetIncome / totalRevenue) * 100 : 0;
-  const totalCogs = kpis.reduce((acc, curr) => acc + curr.cogs, 0);
-  const cogsPercentage = totalRevenue > 0 ? (totalCogs / totalRevenue) * 100 : 0;
+  // --- DATA FILTERING & COMPARISON LOGIC ---
+
+  const getPeriodStats = (data: DailyKPI[]) => {
+    const revenue = data.reduce((acc, curr) => acc + curr.revenue, 0);
+    const netIncome = data.reduce((acc, curr) => acc + curr.net_income, 0);
+    const cogs = data.reduce((acc, curr) => acc + curr.cogs, 0);
+    const netMargin = revenue > 0 ? (netIncome / revenue) * 100 : 0;
+    const cogsPerc = revenue > 0 ? (cogs / revenue) * 100 : 0;
+
+    return { revenue, netIncome, netMargin, cogs: cogsPerc };
+  };
+
+  // Slice data for current period
+  const currentData = kpis.slice(-days);
+  const currentStats = getPeriodStats(currentData);
+
+  // Slice data for previous period (if comparing)
+  let previousStats = undefined;
+  if (isComparing) {
+    const prevData = kpis.slice(-(days * 2), -days);
+    if (prevData.length > 0) {
+      previousStats = getPeriodStats(prevData);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#040a21] text-[#e6f1ff] p-4 md:p-8 lg:p-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 relative">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <LayoutDashboard className="w-8 h-8 text-[#64ffda]" />
@@ -61,7 +84,7 @@ export default function Dashboard() {
           </div>
           <p className="text-[#8892b0] flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
-            Operational & Financial Intelligence Dashboard
+            Last {days} Days Analytics {isComparing && "with Comparisons"}
           </p>
         </div>
 
@@ -72,46 +95,78 @@ export default function Dashboard() {
             className="flex items-center gap-2 bg-[#112240] hover:bg-[#1e293b] text-[#64ffda] px-5 py-2.5 rounded-lg border border-[#64ffda]/20 transition-all font-medium"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Syncing...' : 'Refresh Data'}
+            {refreshing ? 'Syncing...' : 'Refresh'}
           </button>
-          <button className="flex items-center gap-2 bg-[#64ffda] hover:bg-[#64ffda]/90 text-[#0a192f] px-5 py-2.5 rounded-lg transition-all font-bold shadow-[0_4px_14px_0_rgba(100,255,218,0.39)]">
-            <Filter className="w-4 h-4" />
-            Filters
-          </button>
+
+          <div className="relative">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 bg-[#64ffda] hover:bg-[#64ffda]/90 text-[#0a192f] px-5 py-2.5 rounded-lg transition-all font-bold shadow-[0_4px_14px_0_rgba(100,255,218,0.39)]"
+            >
+              <Filter className="w-4 h-4" />
+              Time Range
+            </button>
+
+            {showFilters && (
+              <div className="absolute right-0 mt-2 w-64 bg-[#0b112b] border border-[#1e293b] rounded-xl shadow-2xl p-4 z-50">
+                <p className="text-xs uppercase font-bold text-[#64ffda] mb-3">Select Period</p>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {[7, 30, 90].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => { setDays(d); setShowFilters(false); }}
+                      className={`px-3 py-2 rounded-lg text-sm transition-all ${days === d ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
+                    >
+                      {d} Days
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => { setDays(kpis.length); setShowFilters(false); }}
+                    className={`px-3 py-2 rounded-lg text-sm transition-all ${days === kpis.length ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
+                  >
+                    All Time
+                  </button>
+                </div>
+
+                <div className="pt-3 border-t border-[#1e293b] flex items-center justify-between">
+                  <span className="text-sm font-medium">Compare Previous</span>
+                  <button
+                    onClick={() => setIsComparing(!isComparing)}
+                    className={`w-12 h-6 rounded-full transition-all relative ${isComparing ? 'bg-[#64ffda]' : 'bg-[#1e293b]'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isComparing ? 'right-1' : 'left-1'}`} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* KPI Overview */}
       <KpiGrid
-        revenue={totalRevenue}
-        netIncome={totalNetIncome}
-        netMargin={avgMargin}
-        cogs={cogsPercentage}
+        current={currentStats}
+        previous={previousStats}
       />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Charts Column */}
         <div className="lg:col-span-2 space-y-8">
-          <RevenueChart data={kpis} />
-          <DayOfWeekChart data={kpis} />
+          <RevenueChart data={currentData} />
+          <DayOfWeekChart data={currentData} />
         </div>
 
         {/* Operational Sidebar */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-8">
           <InventoryTable predictions={predictions} />
 
-          <div className="mt-8 bg-gradient-to-br from-[#112240] to-[#0b112b] border border-[#64ffda]/20 rounded-xl p-6">
-            <h4 className="text-[#64ffda] font-bold mb-3 flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Efficiency Alert
-            </h4>
-            <p className="text-sm text-[#8892b0] leading-relaxed">
-              Net income is tracking <span className="text-emerald-400 font-semibold">+12% higher</span> than the rolling 7-day average. Inventory levels for key items are stable.
+          <div className="p-6 bg-[#0b112b] border border-[#1e293b] rounded-xl">
+            <h3 className="text-[#e6f1ff] text-lg font-semibold mb-2">Operational Insight</h3>
+            <p className="text-[#8892b0] text-sm leading-relaxed">
+              Showing performance for the last {days} days. Comparing against the identical preceding period.
+              Revenue is {((currentStats.revenue / (previousStats?.revenue || 1)) * 100 - 100).toFixed(1)}% changed vs previous.
             </p>
-            <button className="mt-4 text-xs font-bold uppercase tracking-wider text-[#64ffda] hover:underline underline-offset-4">
-              View AI Insights &rarr;
-            </button>
           </div>
         </div>
       </div>
