@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
-import { InventoryPrediction } from '@/lib/api';
+import type { InventoryPrediction } from '@/lib/api';
 
 export function InventoryTable({ predictions }: { predictions: InventoryPrediction[] }) {
     const getUrgencyIcon = (days: number) => {

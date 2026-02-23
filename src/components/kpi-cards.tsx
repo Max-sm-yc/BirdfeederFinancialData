@@ -1,6 +1,7 @@
 import { ArrowUpRight, ArrowDownRight, DollarSign, Percent, TrendingUp, CreditCard } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { ReactNode } from 'react';
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -11,7 +12,7 @@ interface KpiCardProps {
     value: string;
     delta: string;
     isPositive: boolean;
-    icon: React.ReactNode;
+    icon: ReactNode;
 }
 
 export function KpiCard({ title, value, delta, isPositive, icon }: KpiCardProps) {
