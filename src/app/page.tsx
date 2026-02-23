@@ -15,7 +15,11 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Filter states
+  const [rangeType, setRangeType] = useState<'preset' | 'custom'>('preset');
   const [days, setDays] = useState<number>(7);
+  const [customStart, setCustomStart] = useState<string>('');
+  const [customEnd, setCustomEnd] = useState<string>('');
+
   const [isComparing, setIsComparing] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -27,6 +31,16 @@ export default function Dashboard() {
     ]);
     setKpis(kpiData);
     setPredictions(predData);
+
+    // Set default custom dates based on data if not set
+    if (kpiData.length > 0 && !customStart) {
+      const end = new Date(kpiData[kpiData.length - 1].date);
+      const start = new Date(end);
+      start.setDate(start.getDate() - 7);
+      setCustomEnd(end.toISOString().split('T')[0]);
+      setCustomStart(start.toISOString().split('T')[0]);
+    }
+
     setLoading(false);
     setRefreshing(false);
   }
@@ -58,18 +72,38 @@ export default function Dashboard() {
     return { revenue, netIncome, netMargin, cogs: cogsPerc };
   };
 
-  // Slice data for current period
-  const currentData = kpis.slice(-days);
-  const currentStats = getPeriodStats(currentData);
+  let currentData: DailyKPI[] = [];
+  let previousData: DailyKPI[] = [];
 
-  // Slice data for previous period (if comparing)
-  let previousStats = undefined;
-  if (isComparing) {
-    const prevData = kpis.slice(-(days * 2), -days);
-    if (prevData.length > 0) {
-      previousStats = getPeriodStats(prevData);
+  if (rangeType === 'preset') {
+    currentData = kpis.slice(-days);
+    if (isComparing) {
+      previousData = kpis.slice(-(days * 2), -days);
+    }
+  } else {
+    // Custom date logic
+    const start = new Date(customStart);
+    const end = new Date(customEnd);
+    currentData = kpis.filter(k => {
+      const d = new Date(k.date);
+      return d >= start && d <= end;
+    });
+
+    if (isComparing && currentData.length > 0) {
+      // Calculate length of current period in ms
+      const duration = end.getTime() - start.getTime();
+      const prevEnd = new Date(start.getTime() - 86400000); // Day before current start
+      const prevStart = new Date(prevEnd.getTime() - duration);
+
+      previousData = kpis.filter(k => {
+        const d = new Date(k.date);
+        return d >= prevStart && d <= prevEnd;
+      });
     }
   }
+
+  const currentStats = getPeriodStats(currentData);
+  const previousStats = previousData.length > 0 ? getPeriodStats(previousData) : undefined;
 
   return (
     <main className="min-h-screen bg-[#040a21] text-[#e6f1ff] p-4 md:p-8 lg:p-12">
@@ -84,7 +118,7 @@ export default function Dashboard() {
           </div>
           <p className="text-[#8892b0] flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
-            Last {days} Days Analytics {isComparing && "with Comparisons"}
+            {rangeType === 'preset' ? `Last ${days} Days` : `${customStart} to ${customEnd}`} Analytics {isComparing && "with Comparisons"}
           </p>
         </div>
 
@@ -104,29 +138,69 @@ export default function Dashboard() {
               className="flex items-center gap-2 bg-[#64ffda] hover:bg-[#64ffda]/90 text-[#0a192f] px-5 py-2.5 rounded-lg transition-all font-bold shadow-[0_4px_14px_0_rgba(100,255,218,0.39)]"
             >
               <Filter className="w-4 h-4" />
-              Time Range
+              Custom Range
             </button>
 
             {showFilters && (
-              <div className="absolute right-0 mt-2 w-64 bg-[#0b112b] border border-[#1e293b] rounded-xl shadow-2xl p-4 z-50">
-                <p className="text-xs uppercase font-bold text-[#64ffda] mb-3">Select Period</p>
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  {[7, 30, 90].map((d) => (
+              <div className="absolute right-0 mt-2 w-80 bg-[#0b112b] border border-[#1e293b] rounded-xl shadow-2xl p-6 z-50">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs uppercase font-bold text-[#64ffda]">Select Period</p>
+                  <div className="flex bg-[#112240] rounded-md p-1">
                     <button
-                      key={d}
-                      onClick={() => { setDays(d); setShowFilters(false); }}
-                      className={`px-3 py-2 rounded-lg text-sm transition-all ${days === d ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
-                    >
-                      {d} Days
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => { setDays(kpis.length); setShowFilters(false); }}
-                    className={`px-3 py-2 rounded-lg text-sm transition-all ${days === kpis.length ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
-                  >
-                    All Time
-                  </button>
+                      onClick={() => setRangeType('preset')}
+                      className={`px-3 py-1 text-xs rounded transition-all ${rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'text-[#8892b0]'}`}
+                    >Presets</button>
+                    <button
+                      onClick={() => setRangeType('custom')}
+                      className={`px-3 py-1 text-xs rounded transition-all ${rangeType === 'custom' ? 'bg-[#64ffda] text-[#0a192f]' : 'text-[#8892b0]'}`}
+                    >Custom</button>
+                  </div>
                 </div>
+
+                {rangeType === 'preset' ? (
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {[7, 30, 90].map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => { setDays(d); setRangeType('preset'); setShowFilters(false); }}
+                        className={`px-3 py-2 rounded-lg text-sm transition-all ${days === d && rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
+                      >
+                        {d} Days
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => { setDays(kpis.length); setRangeType('preset'); setShowFilters(false); }}
+                      className={`px-3 py-2 rounded-lg text-sm transition-all ${days === kpis.length && rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
+                    >
+                      All Time
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mb-4">
+                    <div>
+                      <label className="text-[10px] text-[#8892b0] uppercase mb-1 block font-bold">Start Date</label>
+                      <input
+                        type="date"
+                        value={customStart}
+                        onChange={(e) => setCustomStart(e.target.value)}
+                        className="w-full bg-[#112240] border border-[#1e293b] rounded px-3 py-2 text-sm text-[#e6f1ff] focus:outline-none focus:border-[#64ffda]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-[#8892b0] uppercase mb-1 block font-bold">End Date</label>
+                      <input
+                        type="date"
+                        value={customEnd}
+                        onChange={(e) => setCustomEnd(e.target.value)}
+                        className="w-full bg-[#112240] border border-[#1e293b] rounded px-3 py-2 text-sm text-[#e6f1ff] focus:outline-none focus:border-[#64ffda]"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setShowFilters(false)}
+                      className="w-full bg-[#112240] text-[#64ffda] py-2 rounded text-xs font-bold hover:bg-[#1e293b]"
+                    >Apply Custom Range</button>
+                  </div>
+                )}
 
                 <div className="pt-3 border-t border-[#1e293b] flex items-center justify-between">
                   <span className="text-sm font-medium">Compare Previous</span>
@@ -137,6 +211,9 @@ export default function Dashboard() {
                     <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isComparing ? 'right-1' : 'left-1'}`} />
                   </button>
                 </div>
+                <p className="text-[10px] text-[#8892b0] mt-2 italic">
+                  Comparisons use equal length trailing periods.
+                </p>
               </div>
             )}
           </div>
