@@ -40,6 +40,48 @@ export async function fetchKPIs(): Promise<DailyKPI[]> {
     });
 }
 
+export interface Product {
+    id: number;
+    name: string;
+    cogs: number;
+}
+
+export async function fetchProducts(): Promise<Product[]> {
+    const res = await fetch('/api/products');
+    if (!res.ok) throw new Error('Failed to fetch products');
+    return res.json();
+}
+
+export async function createProduct(name: string, cogs: number): Promise<Product> {
+    const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, cogs }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to create product');
+    return json;
+}
+
+export async function updateProduct(id: number, name: string, cogs: number): Promise<Product> {
+    const res = await fetch(`/api/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, cogs }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Failed to update product');
+    return json;
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+    const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || 'Failed to delete product');
+    }
+}
+
 export async function fetchInventoryPredictions(): Promise<InventoryPrediction[]> {
     const url = process.env.WEBHOOK_URL!;
     const key = process.env.WEBHOOK_KEY!;
