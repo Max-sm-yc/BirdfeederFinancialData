@@ -10,23 +10,23 @@ function cn(...inputs: ClassValue[]) {
 interface KpiCardProps {
     title: string;
     value: string;
-    delta?: string; // Made optional as it might not always be present
+    delta?: string;
     isPositive: boolean;
     icon: ReactNode;
-    subtext?: string; // Added subtext
+    subtext?: string;
 }
 
 export function KpiCard({ title, value, delta, isPositive, icon, subtext }: KpiCardProps) {
     return (
-        <div className="bg-[#0b112b] border border-[#1e293b] rounded-xl p-6 shadow-lg transition-all hover:border-[#64ffda]/30">
-            <div className="flex items-center justify-between mb-4">
-                <div className="p-2 bg-[#112240] rounded-lg text-[#64ffda]">
+        <div className="bg-white border border-[#e2e8f0] rounded-xl p-7 shadow-sm transition-all hover:border-[#2563eb]/30 hover:shadow-md">
+            <div className="flex items-center justify-between mb-5">
+                <div className="p-2.5 bg-[#eff6ff] rounded-lg text-[#2563eb]">
                     {icon}
                 </div>
-                {delta && ( // Conditionally render delta
+                {delta && (
                     <div className={cn(
-                        "flex items-center text-sm font-medium",
-                        isPositive ? "text-emerald-400" : "text-rose-400"
+                        "flex items-center text-sm font-semibold",
+                        isPositive ? "text-green-600" : "text-red-600"
                     )}>
                         {isPositive ? <ArrowUpRight className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
                         {delta}
@@ -34,9 +34,9 @@ export function KpiCard({ title, value, delta, isPositive, icon, subtext }: KpiC
                 )}
             </div>
             <div>
-                <h3 className="text-[#8892b0] text-sm font-medium mb-1">{title}</h3>
-                <p className="text-2xl font-bold text-[#e6f1ff]">{value}</p>
-                {subtext && <p className="text-xs text-[#8892b0] mt-1">{subtext}</p>}
+                <h3 className="text-[#64748b] text-sm font-medium mb-1">{title}</h3>
+                <p className="text-2xl font-bold text-[#0f172a]">{value}</p>
+                {subtext && <p className="text-xs text-[#94a3b8] mt-1">{subtext}</p>}
             </div>
         </div>
     );
@@ -51,7 +51,7 @@ interface Analytics {
 
 export function KpiGrid({ current, previous }: { current: Analytics, previous?: Analytics }) {
     const calculateDelta = (curr: number, prev: number) => {
-        if (prev === 0) return null; // Avoid division by zero
+        if (prev === 0) return null;
         const diff = ((curr - prev) / prev) * 100;
         return {
             text: `${Math.abs(diff).toFixed(1)}%`,
@@ -65,7 +65,7 @@ export function KpiGrid({ current, previous }: { current: Analytics, previous?: 
     const cogsDelta = previous ? calculateDelta(current.cogs, previous.cogs) : null;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             <KpiCard
                 title="Total Revenue"
                 value={`$${current.revenue.toLocaleString()}`}
@@ -94,7 +94,7 @@ export function KpiGrid({ current, previous }: { current: Analytics, previous?: 
                 title="COGS %"
                 value={`${current.cogs.toFixed(1)}%`}
                 delta={cogsDelta?.text}
-                isPositive={!(cogsDelta?.isPositive ?? false)} // COGS increase is usually negative
+                isPositive={!(cogsDelta?.isPositive ?? false)}
                 icon={<CreditCard className="w-6 h-6" />}
                 subtext={previous ? `vs ${previous.cogs.toFixed(1)}%` : "Cost Control"}
             />

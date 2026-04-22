@@ -27,39 +27,40 @@ export function RevenueChart({ data }: { data: DailyKPI[] }) {
     });
 
     return (
-        <div className="bg-[#0b112b] border border-[#1e293b] rounded-xl p-6 shadow-lg h-[400px]">
-            <h3 className="text-[#e6f1ff] text-lg font-semibold mb-6">Revenue Performance</h3>
+        <div className="bg-white border border-[#e2e8f0] rounded-xl p-7 shadow-sm h-[420px]">
+            <h3 className="text-[#0f172a] text-lg font-semibold mb-6">Revenue Performance</h3>
             <ResponsiveContainer width="100%" height="85%">
                 <AreaChart data={chartData}>
                     <defs>
                         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#64ffda" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#64ffda" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
+                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                         </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis
                         dataKey="formattedDate"
-                        stroke="#8892b0"
+                        stroke="#94a3b8"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
                     />
                     <YAxis
-                        stroke="#8892b0"
+                        stroke="#94a3b8"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(value: number) => `$${value}`}
                     />
                     <Tooltip
-                        contentStyle={{ backgroundColor: '#112240', border: '1px solid #1e293b', borderRadius: '8px' }}
-                        itemStyle={{ color: '#64ffda' }}
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                        itemStyle={{ color: '#2563eb' }}
+                        labelStyle={{ color: '#0f172a', fontWeight: 600 }}
                     />
                     <Area
                         type="monotone"
                         dataKey="revenue"
-                        stroke="#64ffda"
+                        stroke="#2563eb"
                         fillOpacity={1}
                         fill="url(#colorRev)"
                         strokeWidth={2}
@@ -86,32 +87,33 @@ export function DayOfWeekChart({ data }: { data: DailyKPI[] }) {
     }));
 
     return (
-        <div className="bg-[#0b112b] border border-[#1e293b] rounded-xl p-6 shadow-lg h-[400px]">
-            <h3 className="text-[#e6f1ff] text-lg font-semibold mb-6">Average Revenue by Day</h3>
+        <div className="bg-white border border-[#e2e8f0] rounded-xl p-7 shadow-sm h-[420px]">
+            <h3 className="text-[#0f172a] text-lg font-semibold mb-6">Average Revenue by Day</h3>
             <ResponsiveContainer width="100%" height="85%">
                 <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis
                         dataKey="shortName"
-                        stroke="#8892b0"
+                        stroke="#94a3b8"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
                     />
                     <YAxis
-                        stroke="#8892b0"
+                        stroke="#94a3b8"
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(value: number) => `$${value}`}
                     />
                     <Tooltip
-                        contentStyle={{ backgroundColor: '#112240', border: '1px solid #1e293b', borderRadius: '8px' }}
-                        cursor={{ fill: '#112240' }}
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                        cursor={{ fill: '#f8fafc' }}
+                        labelStyle={{ color: '#0f172a', fontWeight: 600 }}
                     />
                     <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
                         {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={index >= 5 ? '#64ffda' : '#112240'} stroke={index >= 5 ? '#64ffda' : '#1e293b'} />
+                            <Cell key={`cell-${index}`} fill={index >= 5 ? '#2563eb' : '#e2e8f0'} stroke={index >= 5 ? '#2563eb' : '#e2e8f0'} />
                         ))}
                     </Bar>
                 </BarChart>

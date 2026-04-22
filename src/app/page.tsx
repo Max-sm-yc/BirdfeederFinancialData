@@ -52,10 +52,10 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#040a21] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
         <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-[#64ffda] border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(100,255,218,0.5)]"></div>
-          <p className="text-[#64ffda] font-medium animate-pulse">Loading Analytics...</p>
+          <div className="w-12 h-12 border-4 border-[#2563eb] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-[#2563eb] font-medium animate-pulse">Loading Analytics...</p>
         </div>
       </div>
     );
@@ -117,17 +117,17 @@ export default function Dashboard() {
   const previousStats = previousData.length > 0 ? getPeriodStats(previousData) : undefined;
 
   return (
-    <main className="min-h-screen bg-[#040a21] text-[#e6f1ff] p-4 md:p-8 lg:p-12">
+    <main className="min-h-screen bg-[#f8fafc] text-[#0f172a] p-6 md:p-10 lg:p-16">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 relative">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <LayoutDashboard className="w-8 h-8 text-[#64ffda]" />
+            <LayoutDashboard className="w-8 h-8 text-[#2563eb]" />
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Birdfeeder <span className="text-[#64ffda]">Analyst Suite</span>
+              Birdfeeder <span className="text-[#2563eb]">Analyst Suite</span>
             </h1>
           </div>
-          <p className="text-[#8892b0] flex items-center">
+          <p className="text-[#64748b] flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
             {rangeType === 'preset' ? `Last ${days} Days` : `${customStart} to ${customEnd}`}
             {isComparing && ` vs ${comparisonMode === 'period' ? 'Previous Period' : 'Previous Year'}`}
@@ -138,7 +138,7 @@ export default function Dashboard() {
           <button
             onClick={loadData}
             disabled={refreshing}
-            className="flex items-center gap-2 bg-[#112240] hover:bg-[#1e293b] text-[#64ffda] px-5 py-2.5 rounded-lg border border-[#64ffda]/20 transition-all font-medium"
+            className="flex items-center gap-2 bg-white hover:bg-[#f1f5f9] text-[#2563eb] px-5 py-2.5 rounded-lg border border-[#e2e8f0] transition-all font-medium shadow-sm"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Syncing...' : 'Refresh'}
@@ -147,77 +147,77 @@ export default function Dashboard() {
           <div className="relative">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 bg-[#64ffda] hover:bg-[#64ffda]/90 text-[#0a192f] px-5 py-2.5 rounded-lg transition-all font-bold shadow-[0_4px_14px_0_rgba(100,255,218,0.39)]"
+              className="flex items-center gap-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-5 py-2.5 rounded-lg transition-all font-bold shadow-[0_4px_14px_0_rgba(37,99,235,0.25)]"
             >
               <Filter className="w-4 h-4" />
               Analyze
             </button>
 
             {showFilters && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#0b112b] border border-[#1e293b] rounded-xl shadow-2xl p-6 z-50">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-xs uppercase font-bold text-[#64ffda]">Timeframe</p>
-                  <div className="flex bg-[#112240] rounded-md p-1">
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-[#e2e8f0] rounded-xl shadow-2xl p-6 z-50">
+                <div className="flex items-center justify-between mb-5">
+                  <p className="text-xs uppercase font-bold text-[#64748b] tracking-widest">Timeframe</p>
+                  <div className="flex bg-[#f1f5f9] rounded-lg p-1">
                     <button
                       onClick={() => setRangeType('preset')}
-                      className={`px-3 py-1 text-xs rounded transition-all ${rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'text-[#8892b0]'}`}
+                      className={`px-3 py-1 text-xs rounded-md transition-all font-medium ${rangeType === 'preset' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#64748b]'}`}
                     >Presets</button>
                     <button
                       onClick={() => setRangeType('custom')}
-                      className={`px-3 py-1 text-xs rounded transition-all ${rangeType === 'custom' ? 'bg-[#64ffda] text-[#0a192f]' : 'text-[#8892b0]'}`}
+                      className={`px-3 py-1 text-xs rounded-md transition-all font-medium ${rangeType === 'custom' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#64748b]'}`}
                     >Custom</button>
                   </div>
                 </div>
 
                 {rangeType === 'preset' ? (
-                  <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="grid grid-cols-2 gap-2 mb-5">
                     {[7, 30, 90].map((d) => (
                       <button
                         key={d}
                         onClick={() => { setDays(d); setRangeType('preset'); }}
-                        className={`px-3 py-2 rounded-lg text-sm transition-all ${days === d && rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
+                        className={`px-3 py-2.5 rounded-lg text-sm transition-all font-medium ${days === d && rangeType === 'preset' ? 'bg-[#2563eb] text-white shadow-sm' : 'bg-[#f8fafc] text-[#0f172a] border border-[#e2e8f0] hover:bg-[#f1f5f9]'}`}
                       >
                         {d} Days
                       </button>
                     ))}
                     <button
                       onClick={() => { setDays(kpis.length); setRangeType('preset'); }}
-                      className={`px-3 py-2 rounded-lg text-sm transition-all ${days === kpis.length && rangeType === 'preset' ? 'bg-[#64ffda] text-[#0a192f]' : 'bg-[#112240] text-[#e6f1ff] hover:bg-[#1e293b]'}`}
+                      className={`px-3 py-2.5 rounded-lg text-sm transition-all font-medium ${days === kpis.length && rangeType === 'preset' ? 'bg-[#2563eb] text-white shadow-sm' : 'bg-[#f8fafc] text-[#0f172a] border border-[#e2e8f0] hover:bg-[#f1f5f9]'}`}
                     >
                       All Time
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-3 mb-4">
+                  <div className="space-y-4 mb-5">
                     <div>
-                      <label className="text-[10px] text-[#8892b0] uppercase mb-1 block font-bold">Start Date</label>
+                      <label className="text-[10px] text-[#64748b] uppercase mb-1.5 block font-bold tracking-widest">Start Date</label>
                       <input
                         type="date"
                         value={customStart}
                         onChange={(e) => setCustomStart(e.target.value)}
-                        className="w-full bg-[#112240] border border-[#1e293b] rounded px-3 py-2 text-sm text-[#e6f1ff] focus:outline-none focus:border-[#64ffda]"
+                        className="w-full bg-white border border-[#e2e8f0] rounded-lg px-3 py-2.5 text-sm text-[#0f172a] focus:outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/10"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-[#8892b0] uppercase mb-1 block font-bold">End Date</label>
+                      <label className="text-[10px] text-[#64748b] uppercase mb-1.5 block font-bold tracking-widest">End Date</label>
                       <input
                         type="date"
                         value={customEnd}
                         onChange={(e) => setCustomEnd(e.target.value)}
-                        className="w-full bg-[#112240] border border-[#1e293b] rounded px-3 py-2 text-sm text-[#e6f1ff] focus:outline-none focus:border-[#64ffda]"
+                        className="w-full bg-white border border-[#e2e8f0] rounded-lg px-3 py-2.5 text-sm text-[#0f172a] focus:outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/10"
                       />
                     </div>
                   </div>
                 )}
 
-                <div className="pt-4 mt-2 border-t border-[#1e293b] space-y-4">
+                <div className="pt-4 mt-2 border-t border-[#f1f5f9] space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Compare Data</span>
+                    <span className="text-sm font-medium text-[#0f172a]">Compare Data</span>
                     <button
                       onClick={() => setIsComparing(!isComparing)}
-                      className={`w-12 h-6 rounded-full transition-all relative ${isComparing ? 'bg-[#64ffda]' : 'bg-[#1e293b]'}`}
+                      className={`w-12 h-6 rounded-full transition-all relative ${isComparing ? 'bg-[#2563eb]' : 'bg-[#e2e8f0]'}`}
                     >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isComparing ? 'right-1' : 'left-1'}`} />
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${isComparing ? 'right-1' : 'left-1'}`} />
                     </button>
                   </div>
 
@@ -225,11 +225,11 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => setComparisonMode('period')}
-                        className={`text-[10px] uppercase font-bold py-2 rounded border ${comparisonMode === 'period' ? 'border-[#64ffda] text-[#64ffda] bg-[#64ffda]/5' : 'border-[#1e293b] text-[#8892b0]'}`}
+                        className={`text-[10px] uppercase font-bold py-2.5 rounded-lg border transition-all ${comparisonMode === 'period' ? 'border-[#2563eb] text-[#2563eb] bg-blue-50' : 'border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc]'}`}
                       >Previous Period</button>
                       <button
                         onClick={() => setComparisonMode('year')}
-                        className={`text-[10px] uppercase font-bold py-2 rounded border ${comparisonMode === 'year' ? 'border-[#64ffda] text-[#64ffda] bg-[#64ffda]/5' : 'border-[#1e293b] text-[#8892b0]'}`}
+                        className={`text-[10px] uppercase font-bold py-2.5 rounded-lg border transition-all ${comparisonMode === 'year' ? 'border-[#2563eb] text-[#2563eb] bg-blue-50' : 'border-[#e2e8f0] text-[#64748b] hover:bg-[#f8fafc]'}`}
                       >Previous Year</button>
                     </div>
                   )}
@@ -237,7 +237,7 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="w-full mt-6 bg-[#64ffda] text-[#0a192f] py-2.5 rounded text-xs font-bold hover:bg-[#64ffda]/90 transition-all shadow-lg"
+                  className="w-full mt-6 bg-[#2563eb] text-white py-2.5 rounded-lg text-xs font-bold hover:bg-[#1d4ed8] transition-all shadow-sm"
                 >Apply Analytics</button>
               </div>
             )}
@@ -263,9 +263,9 @@ export default function Dashboard() {
         <div className="lg:col-span-1 space-y-8">
           <InventoryTable predictions={predictions} />
 
-          <div className="p-6 bg-[#0b112b] border border-[#1e293b] rounded-xl">
-            <h3 className="text-[#e6f1ff] text-lg font-semibold mb-2">Operational Insight</h3>
-            <p className="text-[#8892b0] text-sm leading-relaxed">
+          <div className="p-7 bg-white border border-[#e2e8f0] rounded-xl shadow-sm">
+            <h3 className="text-[#0f172a] text-lg font-semibold mb-2">Operational Insight</h3>
+            <p className="text-[#64748b] text-sm leading-relaxed">
               Showing performance for the last {days} days. Comparing against the identical preceding period.
               Revenue is {((currentStats.revenue / (previousStats?.revenue || 1)) * 100 - 100).toFixed(1)}% changed vs previous.
             </p>
@@ -274,12 +274,12 @@ export default function Dashboard() {
       </div>
 
       {/* Footer / Raw Data Expander */}
-      <div className="mt-16 pt-8 border-t border-[#112240] flex flex-col md:flex-row justify-between items-center gap-4 text-[#8892b0] text-sm">
+      <div className="mt-16 pt-8 border-t border-[#e2e8f0] flex flex-col md:flex-row justify-between items-center gap-4 text-[#94a3b8] text-sm">
         <p>&copy; 2026 Birdfeeder Data & Analytics. All rights reserved.</p>
         <div className="flex gap-6">
-          <a href="#" className="hover:text-[#64ffda] transition-colors">Privacy Policy</a>
-          <a href="#" className="hover:text-[#64ffda] transition-colors">Documentation</a>
-          <a href="#" className="hover:text-[#64ffda] transition-colors">Support</a>
+          <a href="#" className="hover:text-[#2563eb] transition-colors">Privacy Policy</a>
+          <a href="#" className="hover:text-[#2563eb] transition-colors">Documentation</a>
+          <a href="#" className="hover:text-[#2563eb] transition-colors">Support</a>
         </div>
       </div>
     </main>
