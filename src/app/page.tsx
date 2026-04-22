@@ -6,7 +6,8 @@ import type { DailyKPI, InventoryPrediction } from '@/lib/api';
 import { KpiGrid } from '@/components/kpi-cards';
 import { InventoryTable } from '@/components/inventory-table';
 import { RevenueChart, DayOfWeekChart } from '@/components/revenue-chart';
-import { RefreshCw, Filter, Calendar, LayoutDashboard } from 'lucide-react';
+import { RefreshCw, Filter, Calendar, LayoutDashboard, PackageSearch } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Dashboard() {
   const [kpis, setKpis] = useState<DailyKPI[]>([]);
@@ -135,6 +136,14 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link
+            href="/products"
+            className="flex items-center gap-2 bg-[#112240] hover:bg-[#1e293b] text-[#64ffda] px-5 py-2.5 rounded-lg border border-[#64ffda]/20 transition-all font-medium"
+          >
+            <PackageSearch className="w-4 h-4" />
+            Products
+          </Link>
+
           <button
             onClick={loadData}
             disabled={refreshing}
